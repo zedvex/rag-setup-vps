@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laika Dynamics | Professional RAG Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #06b6d4;
+            --accent: #10b981;
+            --success: #059669;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(14, 165, 233, 0.2);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-light: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --shadow-card: 0 4px 20px rgba(14, 165, 233, 0.15);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(-45deg, #0ea5e9, #06b6d4, #10b981, #059669);
+            background-size: 400% 400%;
+            animation: gradient 20s ease infinite;
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Login Screen */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #0ea5e9, #06b6d4, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .login-form {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            min-width: 400px;
+        }
+        
+        .login-form h2 {
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+        
+        .login-form input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .login-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        
+        .login-form button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .login-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+        }
+        
+        .login-error {
+            color: var(--error);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Main App */
+        .app {
+            display: none;
+        }
+        
+        .app.authenticated {
+            display: block;
+        }
+        
+        /* Header */
+        .header {
+            backdrop-filter: blur(20px);
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo i {
+            color: var(--accent);
+        }
+        
+        .status-indicators {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .status-badge {
+            padding: 0.75rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+        }
+        
+        .status-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card);
+        }
+        
+        .status-online {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+        
+        .status-offline {
+            background: var(--error);
+            color: white;
+            border-color: var(--error);
+        }
+        
+        .logout-btn {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        /* Hero */
+        .hero {
+            text-align: center;
+            margin-bottom: 4rem;
+            color: var(--text-light);
+        }
+        
+        .hero h1 {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 200;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        
+        .hero p {
+            font-size: 1.5rem;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            padding: 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-card);
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+        
+        .nav-tab:hover {
+            background: rgba(14, 165, 233, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.4s ease;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.2);
+        }
+        
+        .card h3 {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .card h3 i {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        
+        .card p, .card div {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+        
+        .card a {
+            color: var(--primary);
+            text-decoration: none;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            background: rgba(14, 165, 233, 0.1);
+        }
+        
+        .card a:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateX(2px);
+        }
+        
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-card);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(100, 116, 139, 0.2);
+        }
+        
+        /* Form Inputs */
+        .input-group {
+            margin-bottom: 2rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+            background: white;
+        }
+        
+        /* Query Interface */
+        .query-interface {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .query-input {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .query-input input {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 16px;
+        }
+        
+        .sample-queries {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .sample-query {
+            padding: 0.75rem 1.5rem;
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .sample-query:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        /* Response Cards */
+        .response-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-top: 2rem;
+            border-left: 4px solid var(--primary);
+            color: var(--text-primary);
+            animation: slideInUp 0.5s ease;
+            box-shadow: var(--shadow-card);
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .response-card h4 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .source-item {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .source-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+        
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(14, 165, 233, 0.3);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #065f46;
+            border: 1px solid var(--success);
+        }
+        
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #991b1b;
+            border: 1px solid var(--error);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container { padding: 2rem 1.5rem; }
+            .grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 1.5rem 1rem; }
+            .nav-tabs { flex-direction: column; gap: 0.5rem; }
+            .query-input { flex-direction: column; }
+            .hero h1 { font-size: 2.5rem; }
+            .card { padding: 2rem; }
+            .query-interface { padding: 2rem; }
+            .login-form { min-width: 300px; padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginContainer" class="login-container">
+        <div class="login-form">
+            <h2><i class="fas fa-shield-alt"></i> Secure Access</h2>
+            <input type="password" id="loginPassword" placeholder="Enter access password" onkeypress="if(event.key==='Enter') login()">
+            <button onclick="login()">Access System</button>
+            <div id="loginError" class="login-error"></div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-rocket"></i>
+                    Laika Dynamics
+                </div>
+                <div class="status-indicators">
+                    <div id="apiStatus" class="status-badge">
+                        <span class="loading"></span> Checking...
+                    </div>
+                    <div id="openaiStatus" class="status-badge">
+                        <i class="fas fa-brain"></i> OpenAI
+                    </div>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="hero">
+                <h1>Professional RAG Demo</h1>
+                <p>Advanced contract analysis with AI-powered insights</p>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('dashboard')">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-tab" onclick="showTab('query')">
+                    <i class="fas fa-search"></i> AI Query
+                </button>
+                <button class="nav-tab" onclick="showTab('data')">
+                    <i class="fas fa-database"></i> Data
+                </button>
+                <button class="nav-tab" onclick="showTab('config')">
+                    <i class="fas fa-cog"></i> Config
+                </button>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div class="grid grid-3">
+                    <div class="card">
+                        <h3><i class="fas fa-globe"></i> System Access</h3>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div>
+                                <strong>Web Interface:</strong><br>
+                                <a href="http://194.238.17.65:3000" target="_blank">http://194.238.17.65:3000</a>
+                            </div>
+                            <div>
+                                <strong>API Documentation:</strong><br>
+                                <a href="http://194.238.17.65:8000/docs" target="_blank">http://194.238.17.65:8000/docs</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class="fas fa-chart-bar"></i> Analytics</h3>
+                        <div id="analyticsData">Loading system analytics...</div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class="fas fa-server"></i> System Info</h3>
+                        <div id="systemInfo">Loading system information...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Tab -->
+            <div id="query-tab" class="tab-content">
+                <div class="query-interface">
+                    <h3 style="color: var(--text-primary); margin-bottom: 2rem; font-size: 1.5rem;">
+                        <i class="fas fa-brain"></i> Intelligent Contract Analysis
+                    </h3>
+                    <div class="query-input">
+                        <input type="text" id="queryInput" placeholder="Ask anything about contracts, technologies, or clients..." 
+                               onkeypress="if(event.key==='Enter') performQuery()">
+                        <button class="btn" onclick="performQuery()">
+                            <i class="fas fa-search"></i> Analyze
+                        </button>
+                    </div>
+                    
+                    <div class="sample-queries">
+                        <div class="sample-query" onclick="setQuery('What are the highest value contracts?')">
+                            Highest value contracts
+                        </div>
+                        <div class="sample-query" onclick="setQuery('Show me React projects')">
+                            React projects
+                        </div>
+                        <div class="sample-query" onclick="setQuery('Which technologies are most popular?')">
+                            Popular technologies
+                        </div>
+                        <div class="sample-query" onclick="setQuery('Healthcare industry contracts')">
+                            Healthcare contracts
+                        </div>
+                    </div>
+                </div>
+
+                <div id="queryResults"></div>
+            </div>
+
+            <!-- Data Tab -->
+            <div id="data-tab" class="tab-content">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3><i class="fas fa-upload"></i> Upload Data</h3>
+                        <div class="input-group">
+                            <label>CSV File (from Ubuntu generation server):</label>
+                            <input type="file" id="dataFile" accept=".csv">
+                        </div>
+                        <button class="btn" onclick="uploadData()">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload Data
+                        </button>
+                        <div id="uploadStatus"></div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class="fas fa-list"></i> Current Dataset</h3>
+                        <div id="dataOverview">Loading data overview...</div>
+                        <button class="btn btn-secondary" onclick="loadDataOverview()" style="margin-top: 1.5rem;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Tab -->
+            <div id="config-tab" class="tab-content">
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h3><i class="fas fa-key"></i> OpenAI Configuration</h3>
+                        <div class="input-group">
+                            <label>API Key:</label>
+                            <input type="password" id="openaiKey" placeholder="sk-proj-...">
+                        </div>
+                        <button class="btn" onclick="configureOpenAI()">
+                            <i class="fas fa-save"></i> Save Configuration
+                        </button>
+                        <div id="configStatus"></div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class="fas fa-info-circle"></i> System Status</h3>
+                        <div id="configInfo">Loading configuration status...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://194.238.17.65:8000';
+        const DEMO_PASSWORD = 'laika2025';
+        
+        // Authentication
+        function login() {
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (password === DEMO_PASSWORD) {
+                localStorage.setItem('authenticated', 'true');
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('app').classList.add('authenticated');
+                loadStoredConfig();
+                checkStatus();
+                loadDashboard();
+            } else {
+                errorDiv.textContent = 'Invalid password. Please try again.';
+                document.getElementById('loginPassword').value = '';
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('authenticated');
+            localStorage.removeItem('openai_key');
+            location.reload();
+        }
+        
+        function checkAuth() {
+            if (localStorage.getItem('authenticated') === 'true') {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('app').classList.add('authenticated');
+                loadStoredConfig();
+                return true;
+            }
+            return false;
+        }
+        
+        function loadStoredConfig() {
+            const storedKey = localStorage.getItem('openai_key');
+            if (storedKey) {
+                document.getElementById('openaiKey').value = storedKey;
+                // Auto-configure stored key
+                configureOpenAI(true);
+            }
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'data') loadDataOverview();
+            if (tabName === 'config') loadConfigInfo();
+        }
+
+        function setQuery(query) {
+            document.getElementById('queryInput').value = query;
+            performQuery();
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('apiStatus').innerHTML = '<i class="fas fa-check-circle"></i> API Online';
+                document.getElementById('apiStatus').className = 'status-badge status-online';
+                
+                document.getElementById('openaiStatus').innerHTML = 
+                    data.openai_configured ? '<i class="fas fa-check-circle"></i> OpenAI Ready' : '<i class="fas fa-times-circle"></i> OpenAI Not Configured';
+                document.getElementById('openaiStatus').className = 
+                    `status-badge ${data.openai_configured ? 'status-online' : 'status-offline'}`;
+                    
+            } catch (error) {
+                document.getElementById('apiStatus').innerHTML = '<i class="fas fa-times-circle"></i> API Offline';
+                document.getElementById('apiStatus').className = 'status-badge status-offline';
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const [analyticsRes, systemRes] = await Promise.all([
+                    fetch(`${API_BASE}/analytics/overview`),
+                    fetch(`${API_BASE}/system`)
+                ]);
+                
+                const analytics = await analyticsRes.json();
+                const system = await systemRes.json();
+                
+                document.getElementById('analyticsData').innerHTML = `
+                    <div>
+                        <p><strong>Total Contracts:</strong> ${analytics.total_contracts.toLocaleString()}</p>
+                        <p><strong>Total Value:</strong> $${analytics.total_value.toLocaleString()}</p>
+                        <p><strong>Average Value:</strong> $${Math.round(analytics.avg_value).toLocaleString()}</p>
+                    </div>
+                `;
+                
+                document.getElementById('systemInfo').innerHTML = `
+                    <div>
+                        <p><strong>Platform:</strong> ${system.system.os}</p>
+                        <p><strong>Memory:</strong> ${system.resources.memory_gb}</p>
+                        <p><strong>CPU Cores:</strong> ${system.resources.cpu_cores}</p>
+                        <p><strong>Status:</strong> <span style="color: var(--success); font-weight: 600;">Operational</span></p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function performQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) return;
+
+            const resultsDiv = document.getElementById('queryResults');
+            resultsDiv.innerHTML = `
+                <div class="response-card">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="loading"></div>
+                        <span>Analyzing your query...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE}/rag/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: query, max_results: 5 })
+                });
+
+                const data = await response.json();
+                
+                const sourcesHtml = data.sources?.map(source => `
+                    <div class="source-item">
+                        <strong>${source.title}</strong><br>
+                        <small style="color: var(--text-secondary);">Client: ${source.company} | Value: $${source.value.toLocaleString()}</small>
+                    </div>
+                `).join('') || '';
+
+                resultsDiv.innerHTML = `
+                    <div class="response-card">
+                        <h4><i class="fas fa-brain"></i> AI Analysis</h4>
+                        <p style="margin-bottom: 2rem; line-height: 1.7; font-size: 1.05rem;">${data.answer}</p>
+                        ${data.sources?.length > 0 ? `
+                            <h5 style="color: var(--primary); margin-bottom: 1.5rem; font-size: 1.1rem;">
+                                <i class="fas fa-list"></i> Sources (${data.found_count} contracts found)
+                            </h5>
+                            ${sourcesHtml}
+                        ` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="response-card">
+                        <h4 style="color: var(--error);"><i class="fas fa-exclamation-triangle"></i> Error</h4>
+                        <p>Failed to process query: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function uploadData() {
+            const fileInput = document.getElementById('dataFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/data/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                const statusClass = data.status === 'success' ? 'status-success' : 'status-error';
+                const message = data.status === 'success' ? 
+                    `✅ Successfully imported ${data.records_imported} records` : 
+                    `❌ Upload failed: ${data.detail}`;
+                
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div class="status-message ${statusClass}">${message}</div>
+                `;
+                
+                if (data.status === 'success') {
+                    loadDataOverview();
+                }
+            } catch (error) {
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div class="status-message status-error">❌ Upload error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function loadDataOverview() {
+            try {
+                const response = await fetch(`${API_BASE}/data/contracts?limit=10`);
+                const data = await response.json();
+                
+                const contractsHtml = data.contracts?.map(contract => `
+                    <div style="border-bottom: 1px solid var(--glass-border); padding: 1rem 0;">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${contract.project_title}</div>
+                        <small style="color: var(--text-secondary);">${contract.client_company} • $${contract.contract_value.toLocaleString()}</small>
+                    </div>
+                `).join('') || '';
+                
+                document.getElementById('dataOverview').innerHTML = `
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 1.5rem;">Recent Contracts:</p>
+                        ${contractsHtml}
+                        ${data.contracts?.length === 0 ? '<p style="color: var(--text-secondary);">No contracts found. Upload data to get started.</p>' : ''}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('dataOverview').innerHTML = '<p style="color: var(--error);">Error loading data</p>';
+            }
+        }
+
+        async function configureOpenAI(silent = false) {
+            const apiKey = document.getElementById('openaiKey').value.trim();
+            if (!apiKey) {
+                if (!silent) alert('Please enter an OpenAI API key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/config/openai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ openai_api_key: apiKey })
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    localStorage.setItem('openai_key', apiKey);
+                    if (!silent) {
+                        const statusClass = 'status-success';
+                        document.getElementById('configStatus').innerHTML = `
+                            <div class="status-message ${statusClass}">${data.message}</div>
+                        `;
+                    }
+                    checkStatus();
+                } else if (!silent) {
+                    document.getElementById('configStatus').innerHTML = `
+                        <div class="status-message status-error">${data.message}</div>
+                    `;
+                }
+            } catch (error) {
+                if (!silent) {
+                    document.getElementById('configStatus').innerHTML = `
+                        <div class="status-message status-error">Error configuring OpenAI: ${error.message}</div>
+                    `;
+                }
+            }
+        }
+
+        async function loadConfigInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('configInfo').innerHTML = `
+                    <div>
+                        <p><strong>OpenAI Status:</strong> 
+                            <span style="color: ${data.openai_configured ? 'var(--success)' : 'var(--error)'}; font-weight: 600;">
+                                ${data.openai_configured ? 'Configured' : 'Not Configured'}
+                            </span>
+                        </p>
+                        <p><strong>API Status:</strong> <span style="color: var(--success); font-weight: 600;">Online</span></p>
+                        <p><strong>Last Check:</strong> ${new Date().toLocaleTimeString()}</p>
+                        <p><strong>Storage:</strong> <span style="color: var(--success); font-weight: 600;">Local Persistence Enabled</span></p>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('configInfo').innerHTML = '<p style="color: var(--error);">Error loading configuration</p>';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAuth()) {
+                checkStatus();
+                loadDashboard();
+                setInterval(checkStatus, 30000);
+            }
+        });
+    </script>
+</body>
+</html> 
