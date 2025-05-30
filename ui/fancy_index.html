@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Laika Dynamics | RAG Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-light: rgba(255, 255, 255, 0.9);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            backdrop-filter: blur(20px);
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-light);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status-indicators {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .status-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .status-online {
+            background: linear-gradient(135deg, var(--success), #34d399);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-offline {
+            background: linear-gradient(135deg, var(--error), #f87171);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--text-light);
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 300;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff, #e5e7eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            padding: 0.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 0.875rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: var(--text-light);
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.5s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Cards Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: rgba(255,255,255,0.3);
+        }
+        
+        .card h3 {
+            color: var(--text-light);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card p, .card div {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-family: 'Monaco', monospace;
+            font-size: 0.875rem;
+            transition: color 0.3s ease;
+        }
+        
+        .card a:hover {
+            color: #93c5fd;
+        }
+        
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 1px solid var(--glass-border);
+            box-shadow: none;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .input-group input::placeholder, .input-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Query Interface */
+        .query-interface {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .query-input {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .query-input input {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+        }
+        
+        .sample-queries {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .sample-query {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .sample-query:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Response Card */
+        .response-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid var(--primary);
+            color: var(--text-primary);
+            animation: slideInUp 0.4s ease;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .response-card h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .source-item {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 0.5rem 0;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .source-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+        
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .status-error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .query-input {
+                flex-direction: column;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🚀 Laika Dynamics</div>
+            <div class="status-indicators">
+                <div id="apiStatus" class="status-badge">
+                    <span class="loading"></span> Checking...
+                </div>
+                <div id="openaiStatus" class="status-badge">
+                    🤖 OpenAI
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>AI-Powered RAG Demo</h1>
+            <p>Professional contract analysis with intelligent search capabilities</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" onclick="showTab('query')">🤖 AI Query</button>
+            <button class="nav-tab" onclick="showTab('data')">📁 Data</button>
+            <button class="nav-tab" onclick="showTab('config')">⚙️ Config</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="grid">
+                <div class="card">
+                    <h3>🌍 System Access</h3>
+                    <div style="space-y: 1rem;">
+                        <div>
+                            <strong>Web Interface:</strong><br>
+                            <a href="http://194.238.17.65:3000" target="_blank">http://194.238.17.65:3000</a>
+                        </div>
+                        <div>
+                            <strong>API Documentation:</strong><br>
+                            <a href="http://194.238.17.65:8000/docs" target="_blank">http://194.238.17.65:8000/docs</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Analytics</h3>
+                    <div id="analyticsData">Loading system analytics...</div>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ System Info</h3>
+                    <div id="systemInfo">Loading system information...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Tab -->
+        <div id="query-tab" class="tab-content">
+            <div class="query-interface">
+                <h3 style="color: var(--text-light); margin-bottom: 1.5rem;">🤖 Intelligent Contract Analysis</h3>
+                <div class="query-input">
+                    <input type="text" id="queryInput" placeholder="Ask anything about contracts, technologies, or clients..." 
+                           onkeypress="if(event.key==='Enter') performQuery()">
+                    <button class="btn" onclick="performQuery()">
+                        <span>🔍</span> Analyze
+                    </button>
+                </div>
+                
+                <div class="sample-queries">
+                    <div class="sample-query" onclick="setQuery('What are the highest value contracts?')">
+                        Highest value contracts
+                    </div>
+                    <div class="sample-query" onclick="setQuery('Show me React projects')">
+                        React projects
+                    </div>
+                    <div class="sample-query" onclick="setQuery('Which technologies are most popular?')">
+                        Popular technologies
+                    </div>
+                    <div class="sample-query" onclick="setQuery('Healthcare industry contracts')">
+                        Healthcare contracts
+                    </div>
+                </div>
+            </div>
+
+            <div id="queryResults"></div>
+        </div>
+
+        <!-- Data Tab -->
+        <div id="data-tab" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>📤 Upload Data</h3>
+                    <div class="input-group">
+                        <label>CSV File (from Ubuntu generation server):</label>
+                        <input type="file" id="dataFile" accept=".csv">
+                    </div>
+                    <button class="btn" onclick="uploadData()">
+                        <span>📤</span> Upload Data
+                    </button>
+                    <div id="uploadStatus"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 Current Dataset</h3>
+                    <div id="dataOverview">Loading data overview...</div>
+                    <button class="btn btn-secondary" onclick="loadDataOverview()" style="margin-top: 1rem;">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Tab -->
+        <div id="config-tab" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>🤖 OpenAI Configuration</h3>
+                    <div class="input-group">
+                        <label>API Key:</label>
+                        <input type="password" id="openaiKey" placeholder="sk-proj-...">
+                    </div>
+                    <button class="btn" onclick="configureOpenAI()">
+                        <span>💾</span> Save Configuration
+                    </button>
+                    <div id="configStatus"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 System Status</h3>
+                    <div id="configInfo">Loading configuration status...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://194.238.17.65:8000';
+
+        function showTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Add active class to selected tab and content
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load tab-specific data
+            if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'data') loadDataOverview();
+            if (tabName === 'config') loadConfigInfo();
+        }
+
+        function setQuery(query) {
+            document.getElementById('queryInput').value = query;
+            performQuery();
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('apiStatus').innerHTML = '✅ API Online';
+                document.getElementById('apiStatus').className = 'status-badge status-online';
+                
+                document.getElementById('openaiStatus').innerHTML = 
+                    data.openai_configured ? '✅ OpenAI Ready' : '❌ OpenAI Not Configured';
+                document.getElementById('openaiStatus').className = 
+                    `status-badge ${data.openai_configured ? 'status-online' : 'status-offline'}`;
+                    
+            } catch (error) {
+                document.getElementById('apiStatus').innerHTML = '❌ API Offline';
+                document.getElementById('apiStatus').className = 'status-badge status-offline';
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const [analyticsRes, systemRes] = await Promise.all([
+                    fetch(`${API_BASE}/analytics/overview`),
+                    fetch(`${API_BASE}/system`)
+                ]);
+                
+                const analytics = await analyticsRes.json();
+                const system = await systemRes.json();
+                
+                document.getElementById('analyticsData').innerHTML = `
+                    <div style="color: rgba(255,255,255,0.8);">
+                        <p><strong>Total Contracts:</strong> ${analytics.total_contracts.toLocaleString()}</p>
+                        <p><strong>Total Value:</strong> $${analytics.total_value.toLocaleString()}</p>
+                        <p><strong>Average Value:</strong> $${Math.round(analytics.avg_value).toLocaleString()}</p>
+                    </div>
+                `;
+                
+                document.getElementById('systemInfo').innerHTML = `
+                    <div style="color: rgba(255,255,255,0.8);">
+                        <p><strong>Platform:</strong> ${system.system.os}</p>
+                        <p><strong>Memory:</strong> ${system.resources.memory_gb}</p>
+                        <p><strong>CPU Cores:</strong> ${system.resources.cpu_cores}</p>
+                        <p><strong>Status:</strong> <span style="color: #10b981;">Operational</span></p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function performQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) return;
+
+            const resultsDiv = document.getElementById('queryResults');
+            resultsDiv.innerHTML = `
+                <div class="response-card">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="loading"></div>
+                        <span>Analyzing your query...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE}/rag/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: query, max_results: 5 })
+                });
+
+                const data = await response.json();
+                
+                const sourcesHtml = data.sources?.map(source => `
+                    <div class="source-item">
+                        <strong>${source.title}</strong><br>
+                        <small style="color: #6b7280;">Client: ${source.company} | Value: $${source.value.toLocaleString()}</small>
+                    </div>
+                `).join('') || '';
+
+                resultsDiv.innerHTML = `
+                    <div class="response-card">
+                        <h4>🤖 AI Analysis</h4>
+                        <p style="margin-bottom: 1.5rem; line-height: 1.6;">${data.answer}</p>
+                        ${data.sources?.length > 0 ? `
+                            <h5 style="color: #4f46e5; margin-bottom: 1rem;">📋 Sources (${data.found_count} contracts found)</h5>
+                            ${sourcesHtml}
+                        ` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="response-card">
+                        <h4 style="color: #ef4444;">❌ Error</h4>
+                        <p>Failed to process query: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function uploadData() {
+            const fileInput = document.getElementById('dataFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/data/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                const statusClass = data.status === 'success' ? 'status-success' : 'status-error';
+                const message = data.status === 'success' ? 
+                    `✅ Successfully imported ${data.records_imported} records` : 
+                    `❌ Upload failed: ${data.detail}`;
+                
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div class="status-message ${statusClass}">${message}</div>
+                `;
+                
+                if (data.status === 'success') {
+                    loadDataOverview();
+                }
+            } catch (error) {
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div class="status-message status-error">❌ Upload error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function loadDataOverview() {
+            try {
+                const response = await fetch(`${API_BASE}/data/contracts?limit=10`);
+                const data = await response.json();
+                
+                const contractsHtml = data.contracts?.map(contract => `
+                    <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 0; color: rgba(255,255,255,0.8);">
+                        <div style="font-weight: 500; color: rgba(255,255,255,0.9);">${contract.project_title}</div>
+                        <small>${contract.client_company} • $${contract.contract_value.toLocaleString()}</small>
+                    </div>
+                `).join('') || '';
+                
+                document.getElementById('dataOverview').innerHTML = `
+                    <div>
+                        <p style="color: rgba(255,255,255,0.9); font-weight: 500; margin-bottom: 1rem;">Recent Contracts:</p>
+                        ${contractsHtml}
+                        ${data.contracts?.length === 0 ? '<p style="color: rgba(255,255,255,0.6);">No contracts found. Upload data to get started.</p>' : ''}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('dataOverview').innerHTML = '<p style="color: #ef4444;">Error loading data</p>';
+            }
+        }
+
+        async function configureOpenAI() {
+            const apiKey = document.getElementById('openaiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter an OpenAI API key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/config/openai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ openai_api_key: apiKey })
+                });
+
+                const data = await response.json();
+                
+                const statusClass = data.status === 'success' ? 'status-success' : 'status-error';
+                document.getElementById('configStatus').innerHTML = `
+                    <div class="status-message ${statusClass}">${data.message}</div>
+                `;
+
+                if (data.status === 'success') {
+                    checkStatus();
+                    document.getElementById('openaiKey').value = '';
+                }
+            } catch (error) {
+                document.getElementById('configStatus').innerHTML = `
+                    <div class="status-message status-error">Error configuring OpenAI: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function loadConfigInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('configInfo').innerHTML = `
+                    <div style="color: rgba(255,255,255,0.8);">
+                        <p><strong>OpenAI Status:</strong> <span style="color: ${data.openai_configured ? '#10b981' : '#ef4444'};">${data.openai_configured ? 'Configured' : 'Not Configured'}</span></p>
+                        <p><strong>API Status:</strong> <span style="color: #10b981;">Online</span></p>
+                        <p><strong>Last Check:</strong> ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('configInfo').innerHTML = '<p style="color: #ef4444;">Error loading configuration</p>';
+            }
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+            loadDashboard();
+            
+            // Auto-refresh status every 30 seconds
+            setInterval(checkStatus, 30000);
+        });
+    </script>
+</body>
+</html> 
