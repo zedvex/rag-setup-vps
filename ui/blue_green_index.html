@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Laika Dynamics | RAG Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --secondary: #06b6d4;
+            --accent: #10b981;
+            --success: #059669;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --glass-bg: rgba(14, 165, 233, 0.08);
+            --glass-border: rgba(14, 165, 233, 0.15);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-light: rgba(255, 255, 255, 0.95);
+            --bg-card: rgba(255, 255, 255, 0.12);
+            --shadow-glass: 0 8px 32px rgba(14, 165, 233, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(-45deg, #0ea5e9, #06b6d4, #10b981, #059669);
+            background-size: 400% 400%;
+            animation: gradient 20s ease infinite;
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Enhanced Header */
+        .header {
+            backdrop-filter: blur(24px);
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-glass);
+        }
+        
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-light);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-indicators {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .status-badge {
+            padding: 0.75rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        }
+        
+        .status-online {
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            color: white;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .status-offline {
+            background: linear-gradient(135deg, var(--error), #f87171);
+            color: white;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        /* Improved Container Layout */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        /* Enhanced Hero */
+        .hero {
+            text-align: center;
+            margin-bottom: 4rem;
+            color: var(--text-light);
+        }
+        
+        .hero h1 {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 200;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff, #e2e8f0, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            letter-spacing: -0.02em;
+        }
+        
+        .hero p {
+            font-size: 1.5rem;
+            font-weight: 400;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        /* Better Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            padding: 0.75rem;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-glass);
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            border-radius: 16px;
+            color: var(--text-light);
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        /* Enhanced Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Improved Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+        
+        /* Enhanced Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-glass);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.6), transparent);
+        }
+        
+        .card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 50px rgba(14, 165, 233, 0.2);
+            border-color: rgba(14, 165, 233, 0.3);
+        }
+        
+        .card h3 {
+            color: var(--text-light);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .card p, .card div {
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.7;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+        
+        .card a {
+            color: #7dd3fc;
+            text-decoration: none;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            background: rgba(125, 211, 252, 0.1);
+        }
+        
+        .card a:hover {
+            color: #0ea5e9;
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateX(2px);
+        }
+        
+        /* Enhanced Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(14, 165, 233, 0.5);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--text-light);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-glass);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Better Form Inputs */
+        .input-group {
+            margin-bottom: 2rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            border: 2px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+        }
+        
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+            background: rgba(255, 255, 255, 0.18);
+        }
+        
+        .input-group input::placeholder, .input-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Enhanced Query Interface */
+        .query-interface {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-glass);
+        }
+        
+        .query-input {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .query-input input {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 20px;
+        }
+        
+        .sample-queries {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .sample-query {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sample-query:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Enhanced Response Cards */
+        .response-card {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(24px);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-top: 2rem;
+            border-left: 6px solid var(--primary);
+            color: var(--text-primary);
+            animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .response-card h4 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        
+        .source-item {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin: 1rem 0;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .source-item:hover {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            transform: translateX(6px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Enhanced Loading */
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Better Status Messages */
+        .status-message {
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            backdrop-filter: blur(16px);
+        }
+        
+        .status-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+            color: #065f46;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-error {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+            color: #991b1b;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .query-input {
+                flex-direction: column;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .card {
+                padding: 2rem;
+            }
+            
+            .query-interface {
+                padding: 2rem;
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(14, 165, 233, 0.4);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(14, 165, 233, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🚀 Laika Dynamics</div>
+            <div class="status-indicators">
+                <div id="apiStatus" class="status-badge">
+                    <span class="loading"></span> Checking...
+                </div>
+                <div id="openaiStatus" class="status-badge">
+                    🤖 OpenAI
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>AI-Powered RAG Demo</h1>
+            <p>Professional contract analysis with intelligent search capabilities</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" onclick="showTab('query')">🤖 AI Query</button>
+            <button class="nav-tab" onclick="showTab('data')">📁 Data</button>
+            <button class="nav-tab" onclick="showTab('config')">⚙️ Config</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="grid grid-3">
+                <div class="card">
+                    <h3>🌍 System Access</h3>
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div>
+                            <strong style="color: rgba(255,255,255,0.9);">Web Interface:</strong><br>
+                            <a href="http://194.238.17.65:3000" target="_blank">http://194.238.17.65:3000</a>
+                        </div>
+                        <div>
+                            <strong style="color: rgba(255,255,255,0.9);">API Documentation:</strong><br>
+                            <a href="http://194.238.17.65:8000/docs" target="_blank">http://194.238.17.65:8000/docs</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 Analytics</h3>
+                    <div id="analyticsData">Loading system analytics...</div>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ System Info</h3>
+                    <div id="systemInfo">Loading system information...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Tab -->
+        <div id="query-tab" class="tab-content">
+            <div class="query-interface">
+                <h3 style="color: var(--text-light); margin-bottom: 2rem; font-size: 1.5rem;">🤖 Intelligent Contract Analysis</h3>
+                <div class="query-input">
+                    <input type="text" id="queryInput" placeholder="Ask anything about contracts, technologies, or clients..." 
+                           onkeypress="if(event.key==='Enter') performQuery()">
+                    <button class="btn" onclick="performQuery()">
+                        <span>🔍</span> Analyze
+                    </button>
+                </div>
+                
+                <div class="sample-queries">
+                    <div class="sample-query" onclick="setQuery('What are the highest value contracts?')">
+                        Highest value contracts
+                    </div>
+                    <div class="sample-query" onclick="setQuery('Show me React projects')">
+                        React projects
+                    </div>
+                    <div class="sample-query" onclick="setQuery('Which technologies are most popular?')">
+                        Popular technologies
+                    </div>
+                    <div class="sample-query" onclick="setQuery('Healthcare industry contracts')">
+                        Healthcare contracts
+                    </div>
+                </div>
+            </div>
+
+            <div id="queryResults"></div>
+        </div>
+
+        <!-- Data Tab -->
+        <div id="data-tab" class="tab-content">
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>📤 Upload Data</h3>
+                    <div class="input-group">
+                        <label>CSV File (from Ubuntu generation server):</label>
+                        <input type="file" id="dataFile" accept=".csv">
+                    </div>
+                    <button class="btn" onclick="uploadData()">
+                        <span>📤</span> Upload Data
+                    </button>
+                    <div id="uploadStatus"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 Current Dataset</h3>
+                    <div id="dataOverview">Loading data overview...</div>
+                    <button class="btn btn-secondary" onclick="loadDataOverview()" style="margin-top: 1.5rem;">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Tab -->
+        <div id="config-tab" class="tab-content">
+            <div class="grid grid-2">
+                <div class="card">
+                    <h3>🤖 OpenAI Configuration</h3>
+                    <div class="input-group">
+                        <label>API Key:</label>
+                        <input type="password" id="openaiKey" placeholder="sk-proj-...">
+                    </div>
+                    <button class="btn" onclick="configureOpenAI()">
+                        <span>💾</span> Save Configuration
+                    </button>
+                    <div id="configStatus"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 System Status</h3>
+                    <div id="configInfo">Loading configuration status...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://194.238.17.65:8000';
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'data') loadDataOverview();
+            if (tabName === 'config') loadConfigInfo();
+        }
+
+        function setQuery(query) {
+            document.getElementById('queryInput').value = query;
+            performQuery();
+        }
+
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('apiStatus').innerHTML = '✅ API Online';
+                document.getElementById('apiStatus').className = 'status-badge status-online';
+                
+                document.getElementById('openaiStatus').innerHTML = 
+                    data.openai_configured ? '✅ OpenAI Ready' : '❌ OpenAI Not Configured';
+                document.getElementById('openaiStatus').className = 
+                    `status-badge ${data.openai_configured ? 'status-online' : 'status-offline'}`;
+                    
+            } catch (error) {
+                document.getElementById('apiStatus').innerHTML = '❌ API Offline';
+                document.getElementById('apiStatus').className = 'status-badge status-offline';
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const [analyticsRes, systemRes] = await Promise.all([
+                    fetch(`${API_BASE}/analytics/overview`),
+                    fetch(`${API_BASE}/system`)
+                ]);
+                
+                const analytics = await analyticsRes.json();
+                const system = await systemRes.json();
+                
+                document.getElementById('analyticsData').innerHTML = `
+                    <div style="color: rgba(255,255,255,0.85);">
+                        <p><strong>Total Contracts:</strong> ${analytics.total_contracts.toLocaleString()}</p>
+                        <p><strong>Total Value:</strong> $${analytics.total_value.toLocaleString()}</p>
+                        <p><strong>Average Value:</strong> $${Math.round(analytics.avg_value).toLocaleString()}</p>
+                    </div>
+                `;
+                
+                document.getElementById('systemInfo').innerHTML = `
+                    <div style="color: rgba(255,255,255,0.85);">
+                        <p><strong>Platform:</strong> ${system.system.os}</p>
+                        <p><strong>Memory:</strong> ${system.resources.memory_gb}</p>
+                        <p><strong>CPU Cores:</strong> ${system.resources.cpu_cores}</p>
+                        <p><strong>Status:</strong> <span style="color: #10b981; font-weight: 600;">Operational</span></p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function performQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) return;
+
+            const resultsDiv = document.getElementById('queryResults');
+            resultsDiv.innerHTML = `
+                <div class="response-card">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="loading"></div>
+                        <span>Analyzing your query...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE}/rag/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: query, max_results: 5 })
+                });
+
+                const data = await response.json();
+                
+                const sourcesHtml = data.sources?.map(source => `
+                    <div class="source-item">
+                        <strong>${source.title}</strong><br>
+                        <small style="color: #64748b;">Client: ${source.company} | Value: $${source.value.toLocaleString()}</small>
+                    </div>
+                `).join('') || '';
+
+                resultsDiv.innerHTML = `
+                    <div class="response-card">
+                        <h4>🤖 AI Analysis</h4>
+                        <p style="margin-bottom: 2rem; line-height: 1.7; font-size: 1.05rem;">${data.answer}</p>
+                        ${data.sources?.length > 0 ? `
+                            <h5 style="color: #0ea5e9; margin-bottom: 1.5rem; font-size: 1.1rem;">📋 Sources (${data.found_count} contracts found)</h5>
+                            ${sourcesHtml}
+                        ` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="response-card">
+                        <h4 style="color: #ef4444;">❌ Error</h4>
+                        <p>Failed to process query: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function uploadData() {
+            const fileInput = document.getElementById('dataFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/data/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                const statusClass = data.status === 'success' ? 'status-success' : 'status-error';
+                const message = data.status === 'success' ? 
+                    `✅ Successfully imported ${data.records_imported} records` : 
+                    `❌ Upload failed: ${data.detail}`;
+                
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div class="status-message ${statusClass}">${message}</div>
+                `;
+                
+                if (data.status === 'success') {
+                    loadDataOverview();
+                }
+            } catch (error) {
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div class="status-message status-error">❌ Upload error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function loadDataOverview() {
+            try {
+                const response = await fetch(`${API_BASE}/data/contracts?limit=10`);
+                const data = await response.json();
+                
+                const contractsHtml = data.contracts?.map(contract => `
+                    <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding: 1rem 0; color: rgba(255,255,255,0.85);">
+                        <div style="font-weight: 600; color: rgba(255,255,255,0.95); margin-bottom: 0.25rem;">${contract.project_title}</div>
+                        <small style="color: rgba(255,255,255,0.7);">${contract.client_company} • $${contract.contract_value.toLocaleString()}</small>
+                    </div>
+                `).join('') || '';
+                
+                document.getElementById('dataOverview').innerHTML = `
+                    <div>
+                        <p style="color: rgba(255,255,255,0.9); font-weight: 600; margin-bottom: 1.5rem;">Recent Contracts:</p>
+                        ${contractsHtml}
+                        ${data.contracts?.length === 0 ? '<p style="color: rgba(255,255,255,0.6);">No contracts found. Upload data to get started.</p>' : ''}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('dataOverview').innerHTML = '<p style="color: #ef4444;">Error loading data</p>';
+            }
+        }
+
+        async function configureOpenAI() {
+            const apiKey = document.getElementById('openaiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter an OpenAI API key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/config/openai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ openai_api_key: apiKey })
+                });
+
+                const data = await response.json();
+                
+                const statusClass = data.status === 'success' ? 'status-success' : 'status-error';
+                document.getElementById('configStatus').innerHTML = `
+                    <div class="status-message ${statusClass}">${data.message}</div>
+                `;
+
+                if (data.status === 'success') {
+                    checkStatus();
+                    document.getElementById('openaiKey').value = '';
+                }
+            } catch (error) {
+                document.getElementById('configStatus').innerHTML = `
+                    <div class="status-message status-error">Error configuring OpenAI: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function loadConfigInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('configInfo').innerHTML = `
+                    <div style="color: rgba(255,255,255,0.85);">
+                        <p><strong>OpenAI Status:</strong> <span style="color: ${data.openai_configured ? '#10b981' : '#ef4444'}; font-weight: 600;">${data.openai_configured ? 'Configured' : 'Not Configured'}</span></p>
+                        <p><strong>API Status:</strong> <span style="color: #10b981; font-weight: 600;">Online</span></p>
+                        <p><strong>Last Check:</strong> ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('configInfo').innerHTML = '<p style="color: #ef4444;">Error loading configuration</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus();
+            loadDashboard();
+            setInterval(checkStatus, 30000);
+        });
+    </script>
+</body>
+</html> 
