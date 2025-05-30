@@ -3,7 +3,7 @@ RAG Service with OpenAI Integration
 Handles embeddings, vector search, and AI-powered querying
 """
 
-import openai
+from openai import AsyncOpenAI
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any, Optional
@@ -24,10 +24,11 @@ class RAGService:
         # OpenAI setup
         self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
         if self.openai_api_key:
-            openai.api_key = self.openai_api_key
+            self.openai_client = AsyncOpenAI(api_key=self.openai_api_key)
             self.use_openai = True
             print("✅ OpenAI API configured")
         else:
+            self.openai_client = None
             self.use_openai = False
             print("⚠️ OpenAI API key not found, using local embeddings")
         
@@ -79,9 +80,9 @@ class RAGService:
 
     async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get embeddings using OpenAI or local model"""
-        if self.use_openai and self.openai_api_key:
+        if self.use_openai and self.openai_client:
             try:
-                response = await openai.Embedding.acreate(
+                response = await self.openai_client.embeddings.create(
                     model="text-embedding-ada-002",
                     input=texts
                 )
@@ -249,7 +250,7 @@ class RAGService:
                 context = context[:max_context_length] + "..."
             
             # Step 3: Generate AI response
-            if self.use_openai and self.openai_api_key:
+            if self.use_openai and self.openai_client:
                 answer = await self.generate_openai_response(question, context)
             else:
                 answer = self.generate_fallback_response(question, relevant_contracts)
@@ -292,7 +293,7 @@ INSTRUCTIONS:
 ANSWER:
 """
 
-            response = await openai.ChatCompletion.acreate(
+            response = await self.openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant specializing in web development contract analysis."},
