@@ -269,10 +269,100 @@ check_almalinux_requirements() {
     log "Installing base packages for AlmaLinux..."
     sudo dnf install -y curl wget git gcc sqlite sqlite-devel python3 python3-pip python3-devel
     
-    # Install Python 3.11 from AppStream
-    log "Installing Python 3.11 from AppStream..."
-    sudo dnf module enable python311 -y
-    sudo dnf install -y python3.11 python3.11-pip python3.11-devel
+    # Install Python 3.11 with fallback methods
+    install_python311
+}
+
+# Install Python 3.11 with multiple fallback methods
+install_python311() {
+    log "Installing Python 3.11 for AlmaLinux..."
+    
+    # Check if Python 3.11 is already available
+    if command -v python3.11 &> /dev/null; then
+        log "✅ Python 3.11 already installed"
+        PYTHON_CMD="python3.11"
+        return 0
+    fi
+    
+    # Method 1: Try AppStream module (AlmaLinux 9.3+)
+    log "Method 1: Trying AppStream module..."
+    if sudo dnf module list python311 2>/dev/null | grep -q python311; then
+        log "AppStream python311 module found, installing..."
+        sudo dnf module enable python311 -y 2>/dev/null || true
+        sudo dnf install -y python3.11 python3.11-pip python3.11-devel 2>/dev/null || true
+        
+        if command -v python3.11 &> /dev/null; then
+            log "✅ Python 3.11 installed successfully from AppStream"
+            PYTHON_CMD="python3.11"
+            return 0
+        fi
+    else
+        log "AppStream python311 module not available"
+    fi
+    
+    # Method 2: Try EPEL or direct packages
+    log "Method 2: Trying EPEL/direct packages..."
+    sudo dnf install -y python3.11 python3.11-pip python3.11-devel 2>/dev/null || true
+    
+    if command -v python3.11 &> /dev/null; then
+        log "✅ Python 3.11 installed successfully from packages"
+        PYTHON_CMD="python3.11"
+        return 0
+    fi
+    
+    # Method 3: Install from IUS repository
+    log "Method 3: Trying IUS repository..."
+    sudo dnf install -y https://repo.ius.io/ius-release-el9.rpm 2>/dev/null || true
+    sudo dnf install -y python311 python311-pip python311-devel 2>/dev/null || true
+    
+    # Create symlinks if IUS naming is different
+    if [ -f /usr/bin/python3.11 ]; then
+        log "✅ Python 3.11 installed successfully from IUS"
+        PYTHON_CMD="python3.11"
+        return 0
+    elif [ -f /usr/bin/python311 ]; then
+        sudo ln -sf /usr/bin/python311 /usr/local/bin/python3.11
+        log "✅ Python 3.11 installed successfully from IUS (with symlink)"
+        PYTHON_CMD="python3.11"
+        return 0
+    fi
+    
+    # Method 4: Compile from source (last resort)
+    log "Method 4: Compiling Python 3.11 from source (this may take 10-15 minutes)..."
+    compile_python311_from_source
+}
+
+# Compile Python 3.11 from source
+compile_python311_from_source() {
+    log "Compiling Python 3.11.8 from source..."
+    
+    # Install build dependencies
+    sudo dnf groupinstall -y "Development Tools" || true
+    sudo dnf install -y openssl-devel bzip2-devel libffi-devel zlib-devel readline-devel sqlite-devel xz-devel tk-devel ncurses-devel
+    
+    # Download and compile Python 3.11.8
+    cd /tmp
+    wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tgz
+    tar xzf Python-3.11.8.tgz
+    cd Python-3.11.8
+    
+    ./configure --enable-optimizations --prefix=/usr/local
+    make -j$(nproc)
+    sudo make altinstall
+    
+    # Clean up
+    cd /
+    rm -rf /tmp/Python-3.11.8*
+    
+    if command -v python3.11 &> /dev/null; then
+        log "✅ Python 3.11 compiled and installed successfully"
+        PYTHON_CMD="python3.11"
+        return 0
+    else
+        warn "Python 3.11 compilation failed, falling back to system Python"
+        PYTHON_CMD="python3"
+        return 1
+    fi
 }
 
 # Configure firewalld for AlmaLinux
@@ -326,11 +416,23 @@ setup_project() {
 
 # Setup Python environment for AlmaLinux
 setup_almalinux_python() {
-    log "Setting up Python 3.11 virtual environment on AlmaLinux..."
+    log "Setting up Python virtual environment on AlmaLinux..."
     cd "$PROJECT_DIR"
     
-    # Create virtual environment with Python 3.11
-    python3.11 -m venv $VENV_NAME
+    # Use the Python command determined during installation
+    if [ -z "$PYTHON_CMD" ]; then
+        if command -v python3.11 &> /dev/null; then
+            PYTHON_CMD="python3.11"
+        else
+            PYTHON_CMD="python3"
+            warn "Using system Python 3.9 instead of Python 3.11"
+        fi
+    fi
+    
+    log "Using Python command: $PYTHON_CMD"
+    
+    # Create virtual environment
+    $PYTHON_CMD -m venv $VENV_NAME
     source $VENV_NAME/bin/activate
     
     # Upgrade pip
@@ -339,6 +441,9 @@ setup_almalinux_python() {
     # Install core dependencies
     log "Installing Python dependencies..."
     pip install fastapi uvicorn python-dotenv pyyaml aiofiles httpx gunicorn
+    
+    # Show Python version being used
+    log "Virtual environment created with Python $(python --version)"
 }
 
 # Install Docker for AlmaLinux
