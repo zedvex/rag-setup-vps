@@ -108,17 +108,18 @@ install_dependencies() {
     cd "$PROJECT_DIR"
     source $VENV_NAME/bin/activate
     
-    # Create requirements.txt
+    # Create requirements.txt with compatible versions
     cat > requirements.txt << 'EOF'
 # Core FastAPI and server
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 
-# AI and ML
-openai==1.3.7
+# AI and ML - Updated compatible versions
+openai==1.6.1
 langchain==0.0.335
 langchain-openai==0.0.2
+langchain-community==0.0.3
 sentence-transformers==2.2.2
 chromadb==0.4.18
 
@@ -136,8 +137,20 @@ psutil==5.9.6
 jinja2==3.1.2
 EOF
     
-    # Install all dependencies
-    pip install -r requirements.txt
+    # Install dependencies in correct order to avoid conflicts
+    log "Installing core dependencies first..."
+    pip install fastapi==0.104.1 uvicorn[standard]==0.24.0 python-multipart==0.0.6
+    
+    log "Installing AI/ML dependencies..."
+    pip install openai==1.6.1
+    pip install langchain==0.0.335 langchain-openai==0.0.2 langchain-community==0.0.3
+    pip install sentence-transformers==2.2.2 chromadb==0.4.18
+    
+    log "Installing data processing dependencies..."
+    pip install pandas==2.1.3 numpy==1.25.2 scikit-learn==1.3.2
+    
+    log "Installing utility dependencies..."
+    pip install python-dotenv==1.0.0 pyyaml==6.0.1 aiofiles==23.2.1 httpx==0.25.2 psutil==5.9.6 jinja2==3.1.2
     
     log "Dependencies installed successfully"
 }
@@ -162,14 +175,13 @@ from fastapi.responses import JSONResponse
 import psutil
 import platform
 
-# AI imports
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+# AI imports - Updated for newer versions
+from langchain_openai import OpenAIEmbeddings, OpenAI
+from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
-from langchain.document_loaders import CSVLoader
-import openai
+from langchain_community.document_loaders import CSVLoader
+from openai import OpenAI as OpenAIClient
 
 app = FastAPI(
     title="Laika Dynamics RAG System",
@@ -196,12 +208,15 @@ class RAGSystem:
         self.vector_store = None
         self.qa_chain = None
         self.documents = []
+        self.openai_client = None
     
     def set_openai_key(self, api_key: str):
         global openai_api_key
         openai_api_key = api_key
-        openai.api_key = api_key
-        self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+        
+        # Initialize OpenAI client and embeddings
+        self.openai_client = OpenAIClient(api_key=api_key)
+        self.embeddings = OpenAIEmbeddings(api_key=api_key)
         return True
     
     def process_csv(self, file_path: str):
@@ -235,7 +250,7 @@ class RAGSystem:
                 )
                 
                 # Create QA chain
-                llm = OpenAI(openai_api_key=openai_api_key, temperature=0)
+                llm = OpenAI(api_key=openai_api_key, temperature=0)
                 self.qa_chain = RetrievalQA.from_chain_type(
                     llm=llm,
                     chain_type="stuff",
