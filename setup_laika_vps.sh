@@ -623,16 +623,16 @@ EOF
             
             <div class="card">
                 <h3><span class="emoji">🤖</span>AI Features</h3>
-                <ul>
+            <ul>
                     <li>✨ Synthetic business data generation</li>
                     <li>🔍 Vector database with Qdrant</li>
                     <li>🧠 Local AI models with Ollama</li>
                     <li>📡 RESTful API interface</li>
                     <li>🌐 Global internet accessibility</li>
                     <li>🔧 Enterprise AlmaLinux setup</li>
-                </ul>
-            </div>
-            
+            </ul>
+        </div>
+        
             <div class="card">
                 <h3><span class="emoji">🎯</span>Perfect for Demo</h3>
                 <p>This system demonstrates a complete RAG (Retrieval Augmented Generation) setup for web contracting data analysis. Built on enterprise-grade AlmaLinux 9 with Python 3.11, it's accessible from anywhere in the world and perfect for showcasing AI capabilities to development teams.</p>
