@@ -73,8 +73,8 @@ setup_system() {
         sqlite \
         firewalld \
         unzip \
-        blas-devel \
-        lapack-devel
+        openblas-devel \
+        lapack-devel || true  # Make BLAS/LAPACK optional
     
     # Enable firewall
     sudo systemctl enable --now firewalld
@@ -217,7 +217,7 @@ app.add_middleware(
 
 # Security
 security = HTTPBasic()
-ADMIN_PASSWORD = "laika2024"  # Change this in production
+ADMIN_PASSWORD = "laika2025"  # Change this in production
 
 def verify_password(credentials: HTTPBasicCredentials = Depends(security)):
     is_correct_username = credentials.username == "admin"
@@ -739,7 +739,7 @@ create_ui() {
         </div>
         
         <div class="auth-info">
-            <strong>Login Credentials:</strong> Username: <code>admin</code> | Password: <code>laika2024</code>
+            <strong>Login Credentials:</strong> Username: <code>admin</code> | Password: <code>laika2025</code>
         </div>
         
         <div class="status-bar">
@@ -807,7 +807,7 @@ To get started:
 
     <script>
         const API_BASE = 'http://194.238.17.65:8000/api';
-        const AUTH_HEADER = 'Basic ' + btoa('admin:laika2024');
+        const AUTH_HEADER = 'Basic ' + btoa('admin:laika2025');
         
         // Set OpenAI API Key
         async function setOpenAIKey() {
@@ -1004,7 +1004,7 @@ def main():
     
     print(f"🌐 Starting Secure RAG UI server on port {PORT}")
     print(f"🔗 Access at: http://194.238.17.65:{PORT}")
-    print(f"🔐 Login: admin / laika2024")
+    print(f"🔐 Login: admin / laika2025")
     
     try:
         with socketserver.TCPServer(("0.0.0.0", PORT), CustomHTTPRequestHandler) as httpd:
@@ -1055,7 +1055,7 @@ sleep 3
 echo ""
 echo "✅ Secure RAG System Started!"
 echo "🌐 Web Interface: http://194.238.17.65:3000"
-echo "🔐 Login: admin / laika2024"
+echo "🔐 Login: admin / laika2025"
 echo "📡 API Endpoint: http://194.238.17.65:8000"
 echo "📚 API Docs: http://194.238.17.65:8000/docs"
 echo ""
@@ -1118,11 +1118,11 @@ main() {
     log ""
     log "🌍 SECURE GLOBAL ACCESS:"
     log "  🌐 Web Interface: http://194.238.17.65:3000"
-    log "  🔐 Login: admin / laika2024"
+    log "  🔐 Login: admin / laika2025"
     log "  📡 API: http://194.238.17.65:8000"
     log ""
     log "🔧 SYSTEM FEATURES:"
-    log "  ✅ Password protected (admin/laika2024)"
+    log "  ✅ Password protected (admin/laika2025)"
     log "  ✅ FAISS vector store (no SQLite dependency)"
     log "  ✅ Compatible OpenAI embedding models"
     log "  ✅ Robust error handling and retry logic"
