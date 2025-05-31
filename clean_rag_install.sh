@@ -223,17 +223,48 @@ class RAGSystem:
             openai_api_key = api_key
             os.environ["OPENAI_API_KEY"] = api_key
             
-            # Initialize embeddings based on available imports
-            if USING_NEW_LANGCHAIN:
-                self.embeddings = OpenAIEmbeddings(api_key=api_key)
-            else:
-                self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+            # Try different embedding models based on availability
+            embedding_models = [
+                "text-embedding-3-small",     # Newer, more widely available
+                "text-embedding-ada-002",     # Legacy model
+                "text-embedding-3-large"      # Premium model
+            ]
             
-            # Test the embeddings with a simple query
-            test_result = self.embeddings.embed_query("test")
-            print(f"OpenAI embeddings test successful. Vector length: {len(test_result)}")
+            for model in embedding_models:
+                try:
+                    print(f"Trying embedding model: {model}")
+                    
+                    # Initialize embeddings based on available imports
+                    if USING_NEW_LANGCHAIN:
+                        self.embeddings = OpenAIEmbeddings(api_key=api_key, model=model)
+                    else:
+                        self.embeddings = OpenAIEmbeddings(openai_api_key=api_key, model=model)
+                    
+                    # Test the embeddings with a simple query
+                    test_result = self.embeddings.embed_query("test")
+                    print(f"✅ Success with {model}! Vector length: {len(test_result)}")
+                    return True
+                    
+                except Exception as e:
+                    print(f"❌ Model {model} failed: {str(e)}")
+                    continue
             
-            return True
+            # If all models fail, try without specifying model (use default)
+            try:
+                print("Trying default embedding model...")
+                if USING_NEW_LANGCHAIN:
+                    self.embeddings = OpenAIEmbeddings(api_key=api_key)
+                else:
+                    self.embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+                
+                test_result = self.embeddings.embed_query("test")
+                print(f"✅ Success with default model! Vector length: {len(test_result)}")
+                return True
+                
+            except Exception as e:
+                print(f"❌ Default model also failed: {str(e)}")
+                return False
+            
         except Exception as e:
             print(f"Error setting OpenAI key: {e}")
             import traceback
@@ -325,18 +356,49 @@ class RAGSystem:
             # Create QA chain
             try:
                 print("Creating QA chain...")
-                if USING_NEW_LANGCHAIN:
-                    llm = OpenAI(api_key=openai_api_key, temperature=0)
-                else:
-                    llm = OpenAI(openai_api_key=openai_api_key, temperature=0)
                 
-                self.qa_chain = RetrievalQA.from_chain_type(
-                    llm=llm,
-                    chain_type="stuff",
-                    retriever=self.vector_store.as_retriever(search_kwargs={"k": 3})
-                )
-                print("QA chain created successfully")
-                return True
+                # Try different LLM models based on availability
+                llm_models = ["gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-instruct"]
+                
+                for model in llm_models:
+                    try:
+                        print(f"Trying LLM model: {model}")
+                        if USING_NEW_LANGCHAIN:
+                            llm = OpenAI(api_key=openai_api_key, model=model, temperature=0)
+                        else:
+                            llm = OpenAI(openai_api_key=openai_api_key, model=model, temperature=0)
+                        
+                        self.qa_chain = RetrievalQA.from_chain_type(
+                            llm=llm,
+                            chain_type="stuff",
+                            retriever=self.vector_store.as_retriever(search_kwargs={"k": 3})
+                        )
+                        print(f"✅ QA chain created successfully with {model}")
+                        return True
+                        
+                    except Exception as e:
+                        print(f"❌ LLM model {model} failed: {str(e)}")
+                        continue
+                
+                # If all specific models fail, try default
+                try:
+                    print("Trying default LLM model...")
+                    if USING_NEW_LANGCHAIN:
+                        llm = OpenAI(api_key=openai_api_key, temperature=0)
+                    else:
+                        llm = OpenAI(openai_api_key=openai_api_key, temperature=0)
+                    
+                    self.qa_chain = RetrievalQA.from_chain_type(
+                        llm=llm,
+                        chain_type="stuff",
+                        retriever=self.vector_store.as_retriever(search_kwargs={"k": 3})
+                    )
+                    print("✅ QA chain created successfully with default model")
+                    return True
+                    
+                except Exception as e:
+                    print(f"❌ Default LLM also failed: {str(e)}")
+                    return False
                 
             except Exception as e:
                 print(f"Error creating QA chain: {e}")
